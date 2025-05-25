@@ -82,6 +82,9 @@
       // 차트 생성
       createCharts(statsData);
 
+      // ✅ 페이지네이션 초기화 추가
+      initializePagination();
+
       // 다크 모드 토글
       document
         .getElementById("darkModeSwitch")
@@ -109,20 +112,28 @@
           showSection("stats-section");
         });
 
-      // 필터 이벤트
-      document
-        .getElementById("textFilter")
-        .addEventListener("change", function () {
-          filters.textId = this.value;
-          applyFilters(textData);
-        });
+      // ✅ 전역 변수로 이동
+      let globalTextData = [];
+      let globalStatsData = {};
 
-      document
-        .getElementById("typeFilter")
-        .addEventListener("change", function () {
-          filters.wordType = this.value;
-          applyFilters(textData);
-        });
+      function initApp(statsData, textData) {
+        // ✅ 전역 변수에 저장
+        globalTextData = textData;
+        globalStatsData = statsData;
+
+        // 필터 이벤트
+        document
+          .getElementById("textFilter")
+          .addEventListener("change", function () {
+            filters.textId = this.value;
+            applyFilters(globalTextData); // ✅ 전역 변수 사용
+          });
+      }
+
+      document.getElementById("typeFilter").addEventListener("change", function () {
+        filters.wordType = this.value;
+        applyFilters(globalTextData); // ✅ 전역 변수 사용
+      });
 
       document
         .getElementById("posFilter")
@@ -131,12 +142,10 @@
           applyFilters(textData);
         });
 
-      document
-        .getElementById("wordSearch")
-        .addEventListener("input", function () {
-          filters.search = this.value.toLowerCase();
-          applyFilters(textData);
-        });
+      document.getElementById("wordSearch").addEventListener("input", function () {
+        filters.search = this.value.toLowerCase();
+        applyFilters(globalTextData); // ✅ 전역 변수 사용
+      });
 
       // 교재명 검색
       document
@@ -483,9 +492,6 @@
         addHighlightListeners(text.id);
       });
 
-      // 단어 하이라이팅에 이벤트 리스너 추가
-      addHighlightListeners(text.id);
-    }
 
     // 전체 단어 목록 표시
     function displayFullWordList(textData) {
@@ -680,14 +686,12 @@
     function showWordDetail(wordData) {
       // 모달 요소 참조
       const modalEl = document.getElementById("wordDetailModal");
-      const modal = new bootstrap.Modal(modalEl);
-
+ 
       // 빈도수에 따른 별표 생성
       const stars = "★".repeat(Math.min(wordData.frequency, 5));
 
       // 모달 내용 업데이트
-      document.getElementById("wordDetailTitle").textContent =
-        wordData.original;
+      document.getElementById("wordDetailTitle").textContent = wordData.original;
       document.getElementById("wordOriginal").textContent = wordData.original;
       document.getElementById("wordBaseForm").textContent = wordData.base_form;
       document.getElementById("wordPos").textContent = wordData.pos || "-";
@@ -701,7 +705,10 @@
       document.getElementById(
         "wordFrequency"
       ).innerHTML = `<span class="frequency-stars">${stars}</span>`;
-
+      // ✅ Bootstrap Modal 올바르게 사용
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    
       // 동의어 표시
       const synonymsContainer = document.getElementById("synonymsContainer");
       const wordSynonyms = document.getElementById("wordSynonyms");
@@ -812,8 +819,7 @@
         const wordPos = row
           .querySelector("td:nth-child(2)")
           .textContent.toLowerCase();
-        const wordType = row.dataset.type ? row.dataset.type.toLowerCase() : "";
-
+        const wordType = row.querySelector("td:nth-child(7)").textContent.toLowerCase(); // ✅ 유형 컬럼이 7번째로 수정됨
         // 필터 조건 검사
         const typeMatch =
           filters.wordType === "all" ||
